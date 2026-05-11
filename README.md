@@ -60,33 +60,44 @@ A arquitetura é construída sobre quatro pilares:
 ```mermaid
 graph TD
     subgraph Mobile ["📱 Apps Flutter — Sprints 3 e 4"]
-        APPC["App Cliente"]
-        APPP["App Prestador"]
+        APPC["App Cliente<br/>(Flutter / Dart)"]
+        APPP["App Prestador<br/>(Flutter / Dart)"]
     end
 
-    subgraph API ["🛠️ Backend REST — Node.js/Express"]
-        ROUTES["Routes (saloes · clientes · reservas)"]
+    subgraph API ["🛠️ Backend REST — Node.js / Express"]
+        ROUTES["Routes<br/>(saloes · clientes · reservas)"]
         CTRL["Controllers"]
         REPO["Repositories"]
     end
 
-    subgraph Data ["🗄️ PostgreSQL"]
-        PG["saloes · clientes · reservas"]
+    subgraph Data ["🗄️ PostgreSQL 15"]
+        PG["Tabelas:<br/>saloes · clientes · reservas"]
     end
 
-    subgraph MOM ["📨 RabbitMQ — Sprint 2"]
+    subgraph MOM ["📨 RabbitMQ 3 — Sprint 2"]
         Q1["fila_notificacoes_prestador"]
         Q2["fila_notificacoes_cliente"]
     end
 
-    APPC -->|"REST/JSON"| ROUTES
-    APPP -->|"REST/JSON"| ROUTES
-    ROUTES --> CTRL --> REPO --> PG
-    CTRL -->|"publica evento"| Q1
-    CTRL -->|"publica evento"| Q2
-    Q1 -->|"consome"| APPP
-    Q2 -->|"consome"| APPC
+    APPC -->|"HTTPS · REST/JSON"| ROUTES
+    APPP -->|"HTTPS · REST/JSON"| ROUTES
+    ROUTES --> CTRL
+    CTRL --> REPO
+    REPO -->|"TCP · SQL (driver pg)"| PG
+    CTRL -->|"AMQP 0-9-1 · publish"| Q1
+    CTRL -->|"AMQP 0-9-1 · publish"| Q2
+    Q1 -.->|"AMQP · consume"| APPP
+    Q2 -.->|"AMQP · consume"| APPC
 ```
+
+**Protocolos por canal:**
+
+| Canal | Protocolo | Formato |
+|---|---|---|
+| App ↔ Backend | HTTP/HTTPS (REST) | JSON |
+| Backend ↔ PostgreSQL | TCP / Postgres wire protocol | SQL via driver `pg` |
+| Backend ↔ RabbitMQ | AMQP 0-9-1 | JSON serializado |
+| MOM → Apps (Sprint 4) | AMQP / WebSocket / Push | JSON |
 
 ---
 
