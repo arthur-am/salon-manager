@@ -1,0 +1,360 @@
+{
+  "info": {
+    "name": "SalonManager - Sprint 1",
+    "description": "Coleção de testes do backend REST do SalonManager (PUC Minas - LDAMD - 2026/1). Endpoints organizados por recurso: health, saloes, clientes, reservas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /api/health",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] },
+            "description": "Verifica se o serviço está online."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/health", "host": ["{{baseUrl}}"], "path": ["api", "health"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"status\": \"ok\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Saloes",
+      "item": [
+        {
+          "name": "GET /api/saloes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/saloes", "host": ["{{baseUrl}}"], "path": ["api", "saloes"] },
+            "description": "Lista todos os salões cadastrados."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/saloes", "host": ["{{baseUrl}}"], "path": ["api", "saloes"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"nome\": \"Salão Imperial\",\n    \"endereco\": \"Av. A, 123\",\n    \"capacidade\": 120,\n    \"descricao\": \"Salão amplo com palco e iluminação\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/saloes/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/saloes/1", "host": ["{{baseUrl}}"], "path": ["api", "saloes", "1"] },
+            "description": "Detalhes de um salão pelo ID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/saloes/1", "host": ["{{baseUrl}}"], "path": ["api", "saloes", "1"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"nome\": \"Salão Imperial\",\n  \"endereco\": \"Av. A, 123\",\n  \"capacidade\": 120,\n  \"descricao\": \"Salão amplo com palco e iluminação\"\n}"
+            },
+            {
+              "name": "404 Not Found",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/saloes/999", "host": ["{{baseUrl}}"], "path": ["api", "saloes", "999"] }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Salao nao encontrado\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/saloes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Espaço Aurora\",\n  \"endereco\": \"Rua das Flores, 200\",\n  \"capacidade\": 150,\n  \"descricao\": \"Salão moderno com iluminação cênica\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/saloes", "host": ["{{baseUrl}}"], "path": ["api", "saloes"] },
+            "description": "Cadastra um novo salão."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/api/saloes", "host": ["{{baseUrl}}"], "path": ["api", "saloes"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 3,\n  \"nome\": \"Espaço Aurora\",\n  \"endereco\": \"Rua das Flores, 200\",\n  \"capacidade\": 150,\n  \"descricao\": \"Salão moderno com iluminação cênica\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Clientes",
+      "item": [
+        {
+          "name": "GET /api/clientes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/clientes", "host": ["{{baseUrl}}"], "path": ["api", "clientes"] },
+            "description": "Lista todos os clientes."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/clientes", "host": ["{{baseUrl}}"], "path": ["api", "clientes"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"nome\": \"João Silva\",\n    \"email\": \"joao@example.com\",\n    \"telefone\": \"+55 31 99999-0000\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/clientes/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/clientes/1", "host": ["{{baseUrl}}"], "path": ["api", "clientes", "1"] },
+            "description": "Detalhes de um cliente pelo ID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/clientes/1", "host": ["{{baseUrl}}"], "path": ["api", "clientes", "1"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"nome\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"telefone\": \"+55 31 99999-0000\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/clientes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@example.com\",\n  \"telefone\": \"+55 31 98888-1111\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/clientes", "host": ["{{baseUrl}}"], "path": ["api", "clientes"] },
+            "description": "Cadastra um novo cliente."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/api/clientes", "host": ["{{baseUrl}}"], "path": ["api", "clientes"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 2,\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@example.com\",\n  \"telefone\": \"+55 31 98888-1111\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/clientes/:id",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"telefone\": \"+55 31 97777-2222\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/clientes/2", "host": ["{{baseUrl}}"], "path": ["api", "clientes", "2"] },
+            "description": "Atualiza dados de um cliente (campos informados; demais permanecem)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "url": { "raw": "{{baseUrl}}/api/clientes/2", "host": ["{{baseUrl}}"], "path": ["api", "clientes", "2"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 2,\n  \"nome\": \"Maria Souza\",\n  \"email\": \"maria@example.com\",\n  \"telefone\": \"+55 31 97777-2222\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "DELETE /api/clientes/:id",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/clientes/2", "host": ["{{baseUrl}}"], "path": ["api", "clientes", "2"] },
+            "description": "Remove um cliente."
+          },
+          "response": [
+            {
+              "name": "204 No Content",
+              "originalRequest": {
+                "method": "DELETE",
+                "url": { "raw": "{{baseUrl}}/api/clientes/2", "host": ["{{baseUrl}}"], "path": ["api", "clientes", "2"] }
+              },
+              "status": "No Content",
+              "code": 204,
+              "header": [],
+              "body": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Reservas",
+      "item": [
+        {
+          "name": "GET /api/reservas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/reservas", "host": ["{{baseUrl}}"], "path": ["api", "reservas"] },
+            "description": "Lista todas as reservas (com nome do cliente e do salão)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/reservas", "host": ["{{baseUrl}}"], "path": ["api", "reservas"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"cliente_id\": 1,\n    \"salao_id\": 1,\n    \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n    \"status\": \"PENDENTE\",\n    \"created_at\": \"2026-05-04T20:00:00.000Z\",\n    \"cliente_nome\": \"João Silva\",\n    \"salao_nome\": \"Salão Imperial\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/reservas/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/reservas/1", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1"] },
+            "description": "Detalhes de uma reserva pelo ID."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/reservas/1", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n  \"status\": \"PENDENTE\",\n  \"created_at\": \"2026-05-04T20:00:00.000Z\",\n  \"cliente_nome\": \"João Silva\",\n  \"salao_nome\": \"Salão Imperial\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "POST /api/reservas",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/reservas", "host": ["{{baseUrl}}"], "path": ["api", "reservas"] },
+            "description": "Cria uma nova solicitação de reserva. Publica evento NOVA_RESERVA_CRIADA na fila do prestador."
+          },
+          "response": [
+            {
+              "name": "201 Created",
+              "originalRequest": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/api/reservas", "host": ["{{baseUrl}}"], "path": ["api", "reservas"] }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 2,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n  \"status\": \"PENDENTE\",\n  \"created_at\": \"2026-05-04T20:05:00.000Z\"\n}"
+            },
+            {
+              "name": "400 Bad Request",
+              "originalRequest": {
+                "method": "POST",
+                "url": { "raw": "{{baseUrl}}/api/reservas", "host": ["{{baseUrl}}"], "path": ["api", "reservas"] }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"Campos obrigatorios: cliente_id, salao_id, data_reserva\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "PUT /api/reservas/:id/status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"novo_status\": \"CONFIRMADA\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/api/reservas/1/status", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1", "status"] },
+            "description": "Atualiza o status de uma reserva. Valores válidos: PENDENTE, CONFIRMADA, RECUSADA, CONCLUIDA. Publica evento STATUS_RESERVA_ATUALIZADO na fila do cliente."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "PUT",
+                "url": { "raw": "{{baseUrl}}/api/reservas/1/status", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1", "status"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n  \"status\": \"CONFIRMADA\",\n  \"created_at\": \"2026-05-04T20:00:00.000Z\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
