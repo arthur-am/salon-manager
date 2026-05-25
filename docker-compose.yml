@@ -1,37 +1,99 @@
 version: '3.8'
+
+# ─────────────────────────────────────────────────────────────
+# SalonManager — Docker Compose (Sprint 2)
+#
+# Serviços:
+#   db        → PostgreSQL 15 (persistência)
+#   rabbitmq  → RabbitMQ 3 + Management UI (MOM)
+#   backend   → API REST Node.js/Express  (porta 3000)
+#   consumer  → Serviço consumidor RabbitMQ (processo separado)
+#
+# O consumer roda em processo isolado do backend para demonstrar
+# que a comunicação é PURAMENTE ASSÍNCRONA via AMQP — nenhuma
+# chamada REST liga os dois processos.
+# ─────────────────────────────────────────────────────────────
+
 services:
+
+  # ── Banco de dados ────────────────────────────────────────
   db:
     image: postgres:15
     environment:
-      POSTGRES_USER: postgres
+      POSTGRES_USER:     postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: salao_festas_db
+      POSTGRES_DB:       salao_festas_db
     ports:
       - "5432:5432"
     volumes:
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
+  # ── Broker de mensagens ───────────────────────────────────
   rabbitmq:
     image: rabbitmq:3-management
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI  (guest/guest)
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
+  # ── API REST ──────────────────────────────────────────────
   backend:
     build:
-      context: ./backend
+      context:    ./backend
       dockerfile: Dockerfile
     environment:
-      - PORT=3000
-      - PGHOST=db
-      - PGUSER=postgres
-      - PGPASSWORD=postgres
-      - PGDATABASE=salao_festas_db
-      - PGPORT=5432
-      - RABBITMQ_URL=amqp://rabbitmq
+      PORT:          3000
+      PGHOST:        db
+      PGUSER:        postgres
+      PGPASSWORD:    postgres
+      PGDATABASE:    salao_festas_db
+      PGPORT:        5432
+      RABBITMQ_URL:  amqp://rabbitmq
     depends_on:
-      - db
-      - rabbitmq
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     ports:
       - "3000:3000"
     restart: unless-stopped
+
+  # ── Consumer (processo separado — Sprint 2) ───────────────
+  # Consome filas:
+  #   • fila_notificacoes_prestador → processa NOVA_RESERVA_CRIADA
+  #   • fila_notificacoes_cliente   → processa STATUS_RESERVA_ATUALIZADO
+  # Persiste cada evento em event_log (PostgreSQL) como evidência.
+  consumer:
+    build:
+      context:    ./backend
+      dockerfile: Dockerfile
+    command: node consumer.js
+    environment:
+      PGHOST:       db
+      PGUSER:       postgres
+      PGPASSWORD:   postgres
+      PGDATABASE:   salao_festas_db
+      PGPORT:       5432
+      RABBITMQ_URL: amqp://rabbitmq
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  rabbitmq_data:

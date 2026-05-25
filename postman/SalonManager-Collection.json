@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "SalonManager - Sprint 1",
-    "description": "Coleção de testes do backend REST do SalonManager (PUC Minas - LDAMD - 2026/1). Endpoints organizados por recurso: health, saloes, clientes, reservas.",
+    "name": "SalonManager - Sprint 2",
+    "description": "Coleção de testes do backend REST do SalonManager (PUC Minas - LDAMD - 2026/1).\nSprint 2: inclui endpoints de Event Log para evidenciar comunicação assíncrona via RabbitMQ.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -298,10 +298,10 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00\"\n}"
+              "raw": "{\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-06-20T19:00:00\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/reservas", "host": ["{{baseUrl}}"], "path": ["api", "reservas"] },
-            "description": "Cria uma nova solicitação de reserva. Publica evento NOVA_RESERVA_CRIADA na fila do prestador."
+            "description": "Cria uma nova solicitação de reserva.\n\n→ [MOM] Publica evento NOVA_RESERVA_CRIADA em fila_notificacoes_prestador\n→ Consumer processa assincronamente e persiste em event_log"
           },
           "response": [
             {
@@ -313,7 +313,7 @@
               "status": "Created",
               "code": 201,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
-              "body": "{\n  \"id\": 2,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n  \"status\": \"PENDENTE\",\n  \"created_at\": \"2026-05-04T20:05:00.000Z\"\n}"
+              "body": "{\n  \"id\": 2,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-06-20T19:00:00.000Z\",\n  \"status\": \"PENDENTE\",\n  \"created_at\": \"2026-05-25T14:32:10.000Z\"\n}"
             },
             {
               "name": "400 Bad Request",
@@ -338,11 +338,11 @@
               "raw": "{\n  \"novo_status\": \"CONFIRMADA\"\n}"
             },
             "url": { "raw": "{{baseUrl}}/api/reservas/1/status", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1", "status"] },
-            "description": "Atualiza o status de uma reserva. Valores válidos: PENDENTE, CONFIRMADA, RECUSADA, CONCLUIDA. Publica evento STATUS_RESERVA_ATUALIZADO na fila do cliente."
+            "description": "Atualiza o status de uma reserva.\nValores válidos: PENDENTE, CONFIRMADA, RECUSADA, CONCLUIDA.\n\n→ [MOM] Publica evento STATUS_RESERVA_ATUALIZADO em fila_notificacoes_cliente\n→ Consumer processa assincronamente e persiste em event_log"
           },
           "response": [
             {
-              "name": "200 OK",
+              "name": "200 OK — CONFIRMADA",
               "originalRequest": {
                 "method": "PUT",
                 "url": { "raw": "{{baseUrl}}/api/reservas/1/status", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1", "status"] }
@@ -351,6 +351,152 @@
               "code": 200,
               "header": [{ "key": "Content-Type", "value": "application/json" }],
               "body": "{\n  \"id\": 1,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n  \"status\": \"CONFIRMADA\",\n  \"created_at\": \"2026-05-04T20:00:00.000Z\"\n}"
+            },
+            {
+              "name": "200 OK — RECUSADA",
+              "originalRequest": {
+                "method": "PUT",
+                "url": { "raw": "{{baseUrl}}/api/reservas/1/status", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1", "status"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"id\": 1,\n  \"cliente_id\": 1,\n  \"salao_id\": 1,\n  \"data_reserva\": \"2026-05-10T19:00:00.000Z\",\n  \"status\": \"RECUSADA\",\n  \"created_at\": \"2026-05-04T20:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 — status inválido",
+              "originalRequest": {
+                "method": "PUT",
+                "url": { "raw": "{{baseUrl}}/api/reservas/1/status", "host": ["{{baseUrl}}"], "path": ["api", "reservas", "1", "status"] }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"error\": \"novo_status invalido. Valores permitidos: PENDENTE, CONFIRMADA, RECUSADA, CONCLUIDA\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Event Log (MOM — Sprint 2)",
+      "description": "Endpoints para consulta dos eventos processados pelo consumer RabbitMQ.\nEvidencia comunicação assíncrona: os eventos são gravados pelo consumer-service\nsem qualquer chamada REST direta do backend.",
+      "item": [
+        {
+          "name": "GET /api/event-log",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/event-log", "host": ["{{baseUrl}}"], "path": ["api", "event-log"] },
+            "description": "Lista todos os eventos processados pelo consumer (últimos 100).\nEvidência de assincronicidade: registros criados pelo consumer-service, não pelo backend."
+          },
+          "response": [
+            {
+              "name": "200 OK — lista de eventos",
+              "originalRequest": {
+                "method": "GET",
+                "url": { "raw": "{{baseUrl}}/api/event-log", "host": ["{{baseUrl}}"], "path": ["api", "event-log"] }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 2,\n    \"tipo\": \"STATUS_RESERVA_ATUALIZADO\",\n    \"fila\": \"fila_notificacoes_cliente\",\n    \"payload\": {\n      \"id\": 1,\n      \"cliente_id\": 1,\n      \"salao_id\": 1,\n      \"data_reserva\": \"2026-06-20T19:00:00.000Z\",\n      \"status\": \"CONFIRMADA\",\n      \"created_at\": \"2026-05-25T14:32:10.000Z\"\n    },\n    \"processado_em\": \"2026-05-25T14:35:22.456Z\"\n  },\n  {\n    \"id\": 1,\n    \"tipo\": \"NOVA_RESERVA_CRIADA\",\n    \"fila\": \"fila_notificacoes_prestador\",\n    \"payload\": {\n      \"id\": 1,\n      \"cliente_id\": 1,\n      \"salao_id\": 1,\n      \"data_reserva\": \"2026-06-20T19:00:00.000Z\",\n      \"status\": \"PENDENTE\",\n      \"created_at\": \"2026-05-25T14:32:10.000Z\"\n    },\n    \"processado_em\": \"2026-05-25T14:32:10.123Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/event-log?tipo=NOVA_RESERVA_CRIADA",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/event-log?tipo=NOVA_RESERVA_CRIADA",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "event-log"],
+              "query": [{ "key": "tipo", "value": "NOVA_RESERVA_CRIADA" }]
+            },
+            "description": "Filtra eventos pelo tipo NOVA_RESERVA_CRIADA (fila do prestador)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/event-log?tipo=NOVA_RESERVA_CRIADA",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "event-log"],
+                  "query": [{ "key": "tipo", "value": "NOVA_RESERVA_CRIADA" }]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"tipo\": \"NOVA_RESERVA_CRIADA\",\n    \"fila\": \"fila_notificacoes_prestador\",\n    \"payload\": { \"id\": 1, \"status\": \"PENDENTE\" },\n    \"processado_em\": \"2026-05-25T14:32:10.123Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/event-log?tipo=STATUS_RESERVA_ATUALIZADO",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/event-log?tipo=STATUS_RESERVA_ATUALIZADO",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "event-log"],
+              "query": [{ "key": "tipo", "value": "STATUS_RESERVA_ATUALIZADO" }]
+            },
+            "description": "Filtra eventos de atualização de status (fila do cliente)."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/event-log?tipo=STATUS_RESERVA_ATUALIZADO",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "event-log"],
+                  "query": [{ "key": "tipo", "value": "STATUS_RESERVA_ATUALIZADO" }]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 2,\n    \"tipo\": \"STATUS_RESERVA_ATUALIZADO\",\n    \"fila\": \"fila_notificacoes_cliente\",\n    \"payload\": { \"id\": 1, \"status\": \"CONFIRMADA\" },\n    \"processado_em\": \"2026-05-25T14:35:22.456Z\"\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "GET /api/event-log?fila=fila_notificacoes_prestador",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/event-log?fila=fila_notificacoes_prestador",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "event-log"],
+              "query": [{ "key": "fila", "value": "fila_notificacoes_prestador" }]
+            },
+            "description": "Filtra eventos pela fila do prestador."
+          },
+          "response": [
+            {
+              "name": "200 OK",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/api/event-log?fila=fila_notificacoes_prestador",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["api", "event-log"],
+                  "query": [{ "key": "fila", "value": "fila_notificacoes_prestador" }]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "[\n  {\n    \"id\": 1,\n    \"tipo\": \"NOVA_RESERVA_CRIADA\",\n    \"fila\": \"fila_notificacoes_prestador\",\n    \"payload\": { \"id\": 1, \"status\": \"PENDENTE\" },\n    \"processado_em\": \"2026-05-25T14:32:10.123Z\"\n  }\n]"
             }
           ]
         }

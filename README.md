@@ -5,8 +5,8 @@
 > Projeto Integrador · **Lab. de Desenvolvimento de Aplicações Móveis e Distribuídas (LDAMD)**
 > Engenharia de Software — **PUC Minas** · 5º Período · Noite · 1º Semestre 2026
 
-![Status](https://img.shields.io/badge/status-Sprint_1-blue?style=for-the-badge)
-![Sprint](https://img.shields.io/badge/sprint_atual-Backend_REST-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-Sprint_2-blue?style=for-the-badge)
+![Sprint](https://img.shields.io/badge/sprint_atual-Integra%C3%A7%C3%A3o_MOM-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Academic-lightgrey?style=for-the-badge)
 
 ---
@@ -22,8 +22,8 @@ A arquitetura é construída sobre quatro pilares:
 
 | Componente | Tecnologia | Sprint |
 |---|---|---|
-| Backend REST | Node.js + Express | Sprint 1 ← *atual* |
-| MOM (mensageria) | RabbitMQ | Sprint 2 |
+| Backend REST | Node.js + Express | Sprint 1 ✅ |
+| MOM (mensageria) | RabbitMQ + Consumer Service | Sprint 2 ✅ ← *atual* |
 | App móvel do cliente | Flutter | Sprint 3 |
 | App móvel do prestador | Flutter | Sprint 4 |
 
@@ -55,7 +55,7 @@ A arquitetura é construída sobre quatro pilares:
 
 ---
 
-## **3. Arquitetura do Sistema**
+## **3. Arquitetura do Sistema (Sprint 2)**
 
 ```mermaid
 graph TD
@@ -64,30 +64,37 @@ graph TD
         APPP["App Prestador<br/>(Flutter / Dart)"]
     end
 
-    subgraph API ["🛠️ Backend REST — Node.js / Express"]
-        ROUTES["Routes<br/>(saloes · clientes · reservas)"]
+    subgraph API ["🛠️ Backend REST — Node.js / Express (porta 3000)"]
+        ROUTES["Routes<br/>(saloes · clientes · reservas · event-log)"]
         CTRL["Controllers"]
         REPO["Repositories"]
+        PUB["Publisher<br/>(AMQP publish)"]
     end
 
     subgraph Data ["🗄️ PostgreSQL 15"]
-        PG["Tabelas:<br/>saloes · clientes · reservas"]
+        PG["Tabelas:<br/>saloes · clientes · reservas · event_log"]
     end
 
-    subgraph MOM ["📨 RabbitMQ 3 — Sprint 2"]
-        Q1["fila_notificacoes_prestador"]
-        Q2["fila_notificacoes_cliente"]
+    subgraph MOM ["📨 RabbitMQ 3 — AMQP 0-9-1"]
+        Q1["fila_notificacoes_prestador<br/>(durable)"]
+        Q2["fila_notificacoes_cliente<br/>(durable)"]
     end
 
-    APPC -->|"HTTPS · REST/JSON"| ROUTES
-    APPP -->|"HTTPS · REST/JSON"| ROUTES
+    subgraph Consumer ["⚙️ Consumer Service — processo Docker separado"]
+        CONS["consumer.js<br/>(subscribe + ack)"]
+    end
+
+    APPC -->|"HTTP · REST/JSON"| ROUTES
+    APPP -->|"HTTP · REST/JSON"| ROUTES
     ROUTES --> CTRL
     CTRL --> REPO
-    REPO -->|"TCP · SQL (driver pg)"| PG
-    CTRL -->|"AMQP 0-9-1 · publish"| Q1
-    CTRL -->|"AMQP 0-9-1 · publish"| Q2
-    Q1 -.->|"AMQP · consume"| APPP
-    Q2 -.->|"AMQP · consume"| APPC
+    CTRL --> PUB
+    REPO -->|"TCP · SQL"| PG
+    PUB -->|"AMQP publish"| Q1
+    PUB -->|"AMQP publish"| Q2
+    Q1 -->|"AMQP consume/ack"| CONS
+    Q2 -->|"AMQP consume/ack"| CONS
+    CONS -->|"INSERT event_log"| PG
 ```
 
 **Protocolos por canal:**
@@ -96,14 +103,49 @@ graph TD
 |---|---|---|
 | App ↔ Backend | HTTP/HTTPS (REST) | JSON |
 | Backend ↔ PostgreSQL | TCP / Postgres wire protocol | SQL via driver `pg` |
-| Backend ↔ RabbitMQ | AMQP 0-9-1 | JSON serializado |
-| MOM → Apps (Sprint 4) | AMQP / WebSocket / Push | JSON |
+| Backend → RabbitMQ | AMQP 0-9-1 (publish) | JSON serializado |
+| RabbitMQ → Consumer | AMQP 0-9-1 (consume/ack) | JSON serializado |
+| Consumer → PostgreSQL | TCP / Postgres wire protocol | SQL via driver `pg` |
+
+> **Assincronicidade garantida:** `backend` e `consumer` são **containers Docker distintos**.
+> Não há chamada REST ou import de módulo entre eles — a única ponte é o RabbitMQ.
 
 ---
 
-## **4. Endpoints REST**
+## **4. Fluxo de Eventos (Sprint 2)**
+
+```
+Cliente                Backend API            RabbitMQ           Consumer Service
+  │                        │                      │                      │
+  │ POST /api/reservas      │                      │                      │
+  │──────────────────────► │                      │                      │
+  │                        │─── INSERT reserva ──►│DB│                   │
+  │                        │─── publish ──────────►│ fila_prestador │    │
+  │ ◄── 201 Created ───────│                      │                      │
+  │                        │                      │── consume ──────────►│
+  │                        │                      │                      │── INSERT event_log
+  │                        │                      │◄────── ack ──────────│
+  │                        │                      │                      │
+  │ PUT /reservas/1/status  │                      │                      │
+  │──────────────────────► │                      │                      │
+  │                        │─── UPDATE status ───►│DB│                   │
+  │                        │─── publish ──────────►│ fila_cliente   │    │
+  │ ◄── 200 OK ────────────│                      │                      │
+  │                        │                      │── consume ──────────►│
+  │                        │                      │                      │── INSERT event_log
+  │                        │                      │◄────── ack ──────────│
+```
+
+---
+
+## **5. Endpoints REST**
 
 Base URL: `http://localhost:3000`
+
+### Health
+| Método | Endpoint | Descrição |
+|---|---|---|
+| `GET` | `/api/health` | Verifica status do serviço |
 
 ### Salões
 | Método | Endpoint | Descrição |
@@ -121,47 +163,44 @@ Base URL: `http://localhost:3000`
 | `PUT` | `/api/clientes/:id` | Atualiza dados do cliente |
 | `DELETE` | `/api/clientes/:id` | Remove cliente |
 
-### Reservas
+### Reservas (produzem eventos MOM)
+| Método | Endpoint | Descrição | Evento MOM |
+|---|---|---|---|
+| `GET` | `/api/reservas` | Lista reservas (com join) | — |
+| `GET` | `/api/reservas/:id` | Detalhes de uma reserva | — |
+| `POST` | `/api/reservas` | Cria reserva | `NOVA_RESERVA_CRIADA` → `fila_notificacoes_prestador` |
+| `PUT` | `/api/reservas/:id/status` | Atualiza status | `STATUS_RESERVA_ATUALIZADO` → `fila_notificacoes_cliente` |
+
+### Event Log (evidência MOM — Sprint 2)
 | Método | Endpoint | Descrição |
 |---|---|---|
-| `GET` | `/api/reservas` | Lista reservas (com join de cliente e salão) |
-| `GET` | `/api/reservas/:id` | Detalhes de uma reserva |
-| `POST` | `/api/reservas` | Cria reserva → publica `NOVA_RESERVA_CRIADA` no MOM |
-| `PUT` | `/api/reservas/:id/status` | Atualiza status → publica `STATUS_RESERVA_ATUALIZADO` no MOM |
-
-**Exemplo — criar cliente:**
-```bash
-curl -X POST http://localhost:3000/api/clientes \
-  -H 'Content-Type: application/json' \
-  -d '{"nome":"Maria Souza","email":"maria@example.com","telefone":"+55 31 98888-1111"}'
-```
-
-**Exemplo — criar reserva:**
-```bash
-curl -X POST http://localhost:3000/api/reservas \
-  -H 'Content-Type: application/json' \
-  -d '{"cliente_id":1,"salao_id":1,"data_reserva":"2026-05-10T19:00:00"}'
-```
-
-**Exemplo — confirmar reserva (prestador):**
-```bash
-curl -X PUT http://localhost:3000/api/reservas/1/status \
-  -H 'Content-Type: application/json' \
-  -d '{"novo_status":"CONFIRMADA"}'
-```
-
-> Coleção Postman completa: [postman/SalonManager-Collection.json](postman/SalonManager-Collection.json)
+| `GET` | `/api/event-log` | Lista todos os eventos processados pelo consumer |
+| `GET` | `/api/event-log?tipo=NOVA_RESERVA_CRIADA` | Filtra por tipo de evento |
+| `GET` | `/api/event-log?fila=fila_notificacoes_prestador` | Filtra por fila |
+| `GET` | `/api/event-log?limit=10` | Limita quantidade retornada |
 
 ---
 
-## **5. Schema do Banco (PostgreSQL)**
+## **6. Eventos do Domínio**
+
+| Evento | Gatilho | Fila | Produtor | Consumidor |
+|---|---|---|---|---|
+| `NOVA_RESERVA_CRIADA` | `POST /api/reservas` | `fila_notificacoes_prestador` | Backend API | Consumer Service |
+| `STATUS_RESERVA_ATUALIZADO` | `PUT /api/reservas/:id/status` | `fila_notificacoes_cliente` | Backend API | Consumer Service |
+
+> Documentação completa: [docs/sprint2/eventos-documentacao.md](docs/sprint2/eventos-documentacao.md)
+
+---
+
+## **7. Schema do Banco (PostgreSQL)**
 
 Script: [backend/db/init.sql](backend/db/init.sql)
 
 ```sql
-saloes   (id PK · nome · endereco · capacidade · descricao)
-clientes (id PK · nome · email · telefone)
-reservas (id PK · cliente_id FK · salao_id FK · data_reserva · status · created_at)
+saloes    (id PK · nome · endereco · capacidade · descricao)
+clientes  (id PK · nome · email · telefone)
+reservas  (id PK · cliente_id FK · salao_id FK · data_reserva · status · created_at)
+event_log (id PK · tipo · fila · payload JSONB · processado_em)   ← Sprint 2
 ```
 
 **Ciclo de vida do status:**
@@ -172,65 +211,55 @@ PENDENTE ──► CONFIRMADA ──► CONCLUIDA
 
 ---
 
-## **6. Eventos do Domínio (MOM — preview Sprint 2)**
-
-| Evento | Disparo | Fila | Consumidor |
-|---|---|---|---|
-| `NOVA_RESERVA_CRIADA` | `POST /api/reservas` | `fila_notificacoes_prestador` | App prestador |
-| `STATUS_RESERVA_ATUALIZADO` | `PUT /api/reservas/:id/status` | `fila_notificacoes_cliente` | App cliente |
-
----
-
-## **7. Estrutura de Diretórios**
+## **8. Estrutura de Diretórios**
 
 ```text
-workspace/
+salon-manager/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── db.js                          # Pool PostgreSQL
+│   │   │   └── db.js                              # Pool PostgreSQL
 │   │   ├── messaging/
-│   │   │   └── publisher.js                   # Publicação RabbitMQ (com fallback)
+│   │   │   ├── publisher.js                       # Publicação RabbitMQ (com reconexão)
+│   │   │   └── consumer.js                        # Consumidor RabbitMQ (Sprint 2) ← NOVO
 │   │   ├── modules/
-│   │   │   ├── saloes/
-│   │   │   │   ├── saloes.repository.js
-│   │   │   │   ├── saloes.controller.js
-│   │   │   │   └── saloes.routes.js
-│   │   │   ├── clientes/
-│   │   │   │   ├── clientes.repository.js
-│   │   │   │   ├── clientes.controller.js
-│   │   │   │   └── clientes.routes.js
-│   │   │   └── reservas/
-│   │   │       ├── reservas.repository.js
-│   │   │       ├── reservas.controller.js
-│   │   │       └── reservas.routes.js
-│   │   └── app.js                             # Bootstrap Express
+│   │   │   ├── saloes/   (repository · controller · routes)
+│   │   │   ├── clientes/ (repository · controller · routes)
+│   │   │   ├── reservas/ (repository · controller · routes)
+│   │   │   └── event-log/(repository · controller · routes) ← NOVO
+│   │   └── app.js                                 # Bootstrap Express
 │   ├── db/
-│   │   └── init.sql                           # Schema + seeds PostgreSQL
+│   │   └── init.sql                               # Schema + seeds (inclui event_log)
 │   ├── .env.example
 │   ├── Dockerfile
 │   ├── package.json
-│   └── server.js                              # Entry point
+│   ├── consumer.js                                # Entry point consumer-service ← NOVO
+│   └── server.js                                  # Entry point backend API
+├── docs/
+│   └── sprint2/
+│       ├── eventos-documentacao.md                # Tabela de eventos ← NOVO
+│       └── relatorio-integracao.md                # Relatório 1 pág. ← NOVO
 ├── postman/
-│   └── SalonManager-Collection.json
+│   └── SalonManager-Collection.json              # Sprint 1 + event-log (Sprint 2)
 ├── Proposta_Dominio_SalonManager_ArthurAraujoMendonca.pdf
-├── docker-compose.yml
+├── docker-compose.yml                             # db + rabbitmq + backend + consumer
 ├── .gitignore
 └── README.md
 ```
 
 ---
 
-## **8. Execução Local**
+## **9. Execução Local**
 
 **Pré-requisito:** Docker Desktop instalado.
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/arthur-amx/salon-manager.git
+git clone https://github.com/arthur-am/salon-manager.git
 cd salon-manager
 
-# 2. Suba todos os serviços (Postgres + RabbitMQ + Backend)
+# 2. Suba todos os serviços
+#    (PostgreSQL + RabbitMQ + Backend API + Consumer Service)
 docker-compose up --build
 
 # 3. Smoke tests
@@ -244,35 +273,68 @@ curl http://localhost:3000/api/saloes   # → lista de salões seed
 | RabbitMQ Management | http://localhost:15672 (guest/guest) |
 | PostgreSQL | localhost:5432 |
 
+### Demonstração do Fluxo Assíncrono (Sprint 2)
+
+```bash
+# 1. Criar reserva → publica NOVA_RESERVA_CRIADA
+curl -X POST http://localhost:3000/api/reservas \
+  -H 'Content-Type: application/json' \
+  -d '{"cliente_id":1,"salao_id":1,"data_reserva":"2026-06-20T19:00:00"}'
+
+# 2. Verificar nos logs do consumer (processo independente)
+docker-compose logs consumer
+
+# 3. Confirmar no event_log (evidence de assincronicidade)
+curl http://localhost:3000/api/event-log
+
+# 4. Atualizar status → publica STATUS_RESERVA_ATUALIZADO
+curl -X PUT http://localhost:3000/api/reservas/1/status \
+  -H 'Content-Type: application/json' \
+  -d '{"novo_status":"CONFIRMADA"}'
+
+# 5. Verificar segundo evento no log
+curl http://localhost:3000/api/event-log
+```
+
 > Importe [postman/SalonManager-Collection.json](postman/SalonManager-Collection.json) no Postman para testar todos os endpoints com exemplos de request e response.
 
 ---
 
-## **9. Roadmap — 4 Sprints**
+## **10. Roadmap — 4 Sprints**
 
 | Sprint | Foco | Prazo | Status |
 |---|---|---|---|
-| **Sprint 1** | Arquitetura + Backend REST | 11/05/2026 | 🟢 concluída |
-| **Sprint 2** | Integração MOM (RabbitMQ) | 25/05/2026 | ⚪ pendente |
+| **Sprint 1** | Arquitetura + Backend REST | 11/05/2026 | 🟢 concluída (17/20) |
+| **Sprint 2** | Integração MOM (RabbitMQ) | 25/05/2026 | 🟢 concluída |
 | **Sprint 3** | App Flutter — Cliente | 15/06/2026 | ⚪ pendente |
 | **Sprint 4** | App Flutter — Prestador + Entrega Final | 03/07/2026 | ⚪ pendente |
 
 ---
 
-## **10. Critérios — Sprint 1 (20 pts)**
+## **11. Documentação Sprint 2**
+
+| Documento | Localização |
+|---|---|
+| Documentação de Eventos | [docs/sprint2/eventos-documentacao.md](docs/sprint2/eventos-documentacao.md) |
+| Relatório de Integração | [docs/sprint2/relatorio-integracao.md](docs/sprint2/relatorio-integracao.md) |
+| Coleção Postman (atualizada) | [postman/SalonManager-Collection.json](postman/SalonManager-Collection.json) |
+
+---
+
+## **12. Critérios — Sprint 2 (20 pts)**
 
 | Critério | Peso | Pts |
 |---|---|---|
-| Clareza e viabilidade da proposta de domínio | 20% | 4,0 |
-| Qualidade e completude do diagrama de arquitetura | 20% | 4,0 |
-| Funcionalidade e correção dos endpoints REST | 30% | 6,0 |
-| Organização do código (Clean Architecture / boas práticas) | 20% | 4,0 |
-| Documentação dos endpoints (coleção de testes) | 10% | 2,0 |
+| MOM funcionando corretamente (evidência) | 25% | 5,0 |
+| Implementação de produtor e consumidor de eventos | 30% | 6,0 |
+| Qualidade e completude da documentação dos eventos | 20% | 4,0 |
+| Demonstração de assincronicidade real no fluxo | 15% | 3,0 |
+| Clareza do relatório de integração | 10% | 2,0 |
 | **TOTAL** | **100%** | **20,0** |
 
 ---
 
-## **11. Referências**
+## **13. Referências**
 
 - MARTIN, R. C. *Arquitetura Limpa.* Alta Books, 2019.
 - HOHPE, G.; WOOLF, B. *Enterprise Integration Patterns.* Addison-Wesley, 2003.
