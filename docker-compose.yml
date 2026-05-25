@@ -1,7 +1,10 @@
 version: '3.8'
 
 # ─────────────────────────────────────────────────────────────
-# SalonManager — Docker Compose (Sprint 2)
+# SalonManager — Docker Compose / Podman Compose (Sprint 2)
+#
+# Compatível com:  docker compose up --build
+#                  podman-compose up --build
 #
 # Serviços:
 #   db        → PostgreSQL 15 (persistência)
@@ -9,9 +12,8 @@ version: '3.8'
 #   backend   → API REST Node.js/Express  (porta 3000)
 #   consumer  → Serviço consumidor RabbitMQ (processo separado)
 #
-# O consumer roda em processo isolado do backend para demonstrar
-# que a comunicação é PURAMENTE ASSÍNCRONA via AMQP — nenhuma
-# chamada REST liga os dois processos.
+# Nota: publisher e consumer possuem loop de reconexão automático
+# (backoff de 5s), então a ordem de inicialização não é crítica.
 # ─────────────────────────────────────────────────────────────
 
 services:
@@ -62,10 +64,8 @@ services:
       PGPORT:        5432
       RABBITMQ_URL:  amqp://rabbitmq
     depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      - db
+      - rabbitmq
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -88,10 +88,8 @@ services:
       PGPORT:       5432
       RABBITMQ_URL: amqp://rabbitmq
     depends_on:
-      db:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
+      - db
+      - rabbitmq
     restart: unless-stopped
 
 volumes:
