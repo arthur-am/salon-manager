@@ -25,19 +25,35 @@ class ReservasRepositoryImpl implements ReservasRepository {
     required int salaoId,
     required DateTime dataReserva,
   }) async {
-    final json = await _apiClient.post('/api/reservas', {
-      'cliente_id': clienteId,
-      'salao_id': salaoId,
-      'data_reserva': dataReserva.toIso8601String(),
-    }) as Map<String, dynamic>;
+    final json =
+        await _apiClient.post('/api/reservas', {
+              'cliente_id': clienteId,
+              'salao_id': salaoId,
+              'data_reserva': dataReserva.toIso8601String(),
+            })
+            as Map<String, dynamic>;
+
+    return ReservaModel.fromJson(json).toEntity();
+  }
+
+  @override
+  Future<Reserva> updateStatus({
+    required int reservaId,
+    required String status,
+  }) async {
+    final json =
+        await _apiClient.put('/api/reservas/$reservaId/status', {
+              'novo_status': status,
+            })
+            as Map<String, dynamic>;
 
     return ReservaModel.fromJson(json).toEntity();
   }
 
   @override
   Future<List<EventLog>> listEventLog({int limit = 20}) async {
-    final json = await _apiClient.get('/api/event-log?limit=$limit')
-        as List<dynamic>;
+    final json =
+        await _apiClient.get('/api/event-log?limit=$limit') as List<dynamic>;
     return json
         .cast<Map<String, dynamic>>()
         .map((item) => EventLogModel.fromJson(item).toEntity())

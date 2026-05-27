@@ -6,9 +6,22 @@ import '../../../../core/utils/date_formatters.dart';
 import '../../domain/entities/reserva.dart';
 
 class ReservaCard extends StatelessWidget {
-  const ReservaCard({required this.reserva, super.key});
+  const ReservaCard({
+    required this.reserva,
+    this.showManagerActions = false,
+    this.isUpdating = false,
+    this.onConfirm,
+    this.onReject,
+    this.onComplete,
+    super.key,
+  });
 
   final Reserva reserva;
+  final bool showManagerActions;
+  final bool isUpdating;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onReject;
+  final VoidCallback? onComplete;
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +67,8 @@ class ReservaCard extends StatelessWidget {
                         reserva.salaoNome,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w900),
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -66,7 +78,7 @@ class ReservaCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                StatusPill(label: reserva.status, color: color),
+                StatusPill(label: reserva.statusLabel, color: color),
               ],
             ),
             const SizedBox(height: 14),
@@ -86,9 +98,80 @@ class ReservaCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (showManagerActions) ...[
+              const SizedBox(height: 14),
+              _ManagerActions(
+                reserva: reserva,
+                isUpdating: isUpdating,
+                onConfirm: onConfirm,
+                onReject: onReject,
+                onComplete: onComplete,
+              ),
+            ],
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ManagerActions extends StatelessWidget {
+  const _ManagerActions({
+    required this.reserva,
+    required this.isUpdating,
+    this.onConfirm,
+    this.onReject,
+    this.onComplete,
+  });
+
+  final Reserva reserva;
+  final bool isUpdating;
+  final VoidCallback? onConfirm;
+  final VoidCallback? onReject;
+  final VoidCallback? onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    if (reserva.isRejected || reserva.isDone) {
+      return Text(
+        reserva.isRejected
+            ? 'Solicitacao encerrada como recusada.'
+            : 'Evento concluido com sucesso.',
+        style: Theme.of(context).textTheme.bodySmall,
+      );
+    }
+
+    if (isUpdating) {
+      return const LinearProgressIndicator(minHeight: 3);
+    }
+
+    if (reserva.isConfirmed) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: FilledButton.icon(
+          onPressed: onComplete,
+          icon: const Icon(Icons.done_all_rounded),
+          label: const Text('Concluir'),
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      alignment: WrapAlignment.end,
+      children: [
+        OutlinedButton.icon(
+          onPressed: onReject,
+          icon: const Icon(Icons.close_rounded),
+          label: const Text('Recusar'),
+        ),
+        FilledButton.icon(
+          onPressed: onConfirm,
+          icon: const Icon(Icons.check_rounded),
+          label: const Text('Aceitar'),
+        ),
+      ],
     );
   }
 }

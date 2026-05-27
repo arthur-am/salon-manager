@@ -49,8 +49,8 @@ class AsyncStateView<T> extends StatelessWidget {
                 Text(
                   'Nao foi possivel sincronizar',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                    fontWeight: FontWeight.w800,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),

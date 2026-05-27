@@ -10,8 +10,8 @@ class SystemRepositoryImpl implements SystemRepository {
 
   @override
   Future<SystemStatus> getStatus() async {
-    final json = await _apiClient.get('/api/system/status')
-        as Map<String, dynamic>;
+    final json =
+        await _apiClient.get('/api/system/status') as Map<String, dynamic>;
     return SystemStatusModel.fromJson(json).toEntity();
   }
 }

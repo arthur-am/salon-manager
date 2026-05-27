@@ -8,8 +8,8 @@ import '../../domain/entities/system_status.dart';
 
 final systemStatusControllerProvider =
     NotifierProvider<SystemStatusController, AsyncValue<SystemStatus>>(
-  SystemStatusController.new,
-);
+      SystemStatusController.new,
+    );
 
 class SystemStatusController extends Notifier<AsyncValue<SystemStatus>> {
   Timer? _timer;

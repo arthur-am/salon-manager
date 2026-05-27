@@ -13,14 +13,16 @@ class CreateReservaScreen extends ConsumerStatefulWidget {
   final Salao salao;
 
   @override
-  ConsumerState<CreateReservaScreen> createState() => _CreateReservaScreenState();
+  ConsumerState<CreateReservaScreen> createState() =>
+      _CreateReservaScreenState();
 }
 
 class _CreateReservaScreenState extends ConsumerState<CreateReservaScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController(text: 'Arthur Mendonca');
-  final _emailController =
-      TextEditingController(text: 'arthur.mendonca.1352200@sga.pucminas.br');
+  final _emailController = TextEditingController(
+    text: 'arthur.mendonca.1352200@sga.pucminas.br',
+  );
   final _telefoneController = TextEditingController(text: '+55 31 99999-0000');
 
   late DateTime _selectedDate;
@@ -60,9 +62,9 @@ class _CreateReservaScreenState extends ConsumerState<CreateReservaScreen> {
               const SizedBox(height: 18),
               Text(
                 'Dados do cliente',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -72,10 +74,9 @@ class _CreateReservaScreenState extends ConsumerState<CreateReservaScreen> {
                   labelText: 'Nome',
                   prefixIcon: Icon(Icons.person_rounded),
                 ),
-                validator: (value) =>
-                    value == null || value.trim().length < 3
-                        ? 'Informe o nome completo'
-                        : null,
+                validator: (value) => value == null || value.trim().length < 3
+                    ? 'Informe o nome completo'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -99,15 +100,16 @@ class _CreateReservaScreenState extends ConsumerState<CreateReservaScreen> {
                   labelText: 'Telefone',
                   prefixIcon: Icon(Icons.phone_rounded),
                 ),
-                validator: (value) =>
-                    (value?.trim().isEmpty ?? true) ? 'Informe um telefone' : null,
+                validator: (value) => (value?.trim().isEmpty ?? true)
+                    ? 'Informe um telefone'
+                    : null,
               ),
               const SizedBox(height: 20),
               Text(
                 'Data e horario',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 12),
               Row(
@@ -142,11 +144,11 @@ class _CreateReservaScreenState extends ConsumerState<CreateReservaScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'A solicitacao aparece em Minhas reservas assim que o backend confirma o POST /api/reservas.',
+                'A solicitacao aparece em Minhas reservas assim que for enviada.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
             ],
           ),
@@ -212,9 +214,9 @@ class _CreateReservaScreenState extends ConsumerState<CreateReservaScreen> {
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
 
@@ -253,8 +255,8 @@ class _SelectedSalaoPanel extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -288,10 +290,7 @@ class _PickerButton extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: onTap,
       icon: Icon(icon),
-      label: Text(
-        label,
-        overflow: TextOverflow.ellipsis,
-      ),
+      label: Text(label, overflow: TextOverflow.ellipsis),
     );
   }
 }

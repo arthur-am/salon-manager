@@ -57,9 +57,7 @@ class SalaoDetailsScreen extends ConsumerWidget {
                       children: [
                         Text(
                           item.nome,
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineSmall
+                          style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w900,
@@ -68,10 +66,10 @@ class SalaoDetailsScreen extends ConsumerWidget {
                         const SizedBox(height: 10),
                         Text(
                           item.endereco,
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.86),
-                                  ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.86),
+                              ),
                         ),
                       ],
                     ),
@@ -89,13 +87,13 @@ class SalaoDetailsScreen extends ConsumerWidget {
                     color: AppTheme.teal,
                   ),
                   const StatusPill(
-                    icon: Icons.dns_rounded,
-                    label: 'via REST',
+                    icon: Icons.calendar_month_rounded,
+                    label: 'agenda flexivel',
                     color: AppTheme.coral,
                   ),
                   const StatusPill(
-                    icon: Icons.mark_email_unread_rounded,
-                    label: 'evento MOM',
+                    icon: Icons.verified_rounded,
+                    label: 'confirmacao pelo prestador',
                     color: AppTheme.amber,
                   ),
                 ],
@@ -103,16 +101,16 @@ class SalaoDetailsScreen extends ConsumerWidget {
               const SizedBox(height: 22),
               Text(
                 'Descricao',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 8),
               Text(
                 item.descricao,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      height: 1.45,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(height: 1.45),
               ),
               const SizedBox(height: 26),
               FilledButton.icon(
@@ -126,11 +124,11 @@ class SalaoDetailsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 10),
               Text(
-                'Ao criar a reserva, o backend publica NOVA_RESERVA_CRIADA no RabbitMQ e o app atualiza a lista automaticamente.',
+                'Depois de enviar, acompanhe a resposta do prestador em Minhas reservas.',
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
+                  color: Theme.of(context).colorScheme.outline,
+                ),
               ),
             ],
           ),

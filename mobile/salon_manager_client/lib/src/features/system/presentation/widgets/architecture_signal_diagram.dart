@@ -4,8 +4,101 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_theme.dart';
 
+class ArchitectureNodeInfo {
+  const ArchitectureNodeInfo({
+    required this.id,
+    required this.title,
+    required this.subtitle,
+    required this.description,
+    required this.points,
+  });
+
+  final String id;
+  final String title;
+  final String subtitle;
+  final String description;
+  final List<String> points;
+}
+
+const architectureNodeInfos = <ArchitectureNodeInfo>[
+  ArchitectureNodeInfo(
+    id: 'flutter',
+    title: 'Flutter Cliente',
+    subtitle: 'App do usuario',
+    description:
+        'E a interface mobile da Sprint 3. O cliente lista saloes, cria reservas e acompanha mudancas sem precisar atualizar manualmente.',
+    points: [
+      'Entrega as telas de listagem, detalhes, acao principal e acompanhamento.',
+      'Consome o backend por HTTP/JSON, mantendo o app simples para o usuario.',
+      'Organizado em presentation, domain e data para evidenciar Clean Architecture.',
+    ],
+  ),
+  ArchitectureNodeInfo(
+    id: 'api',
+    title: 'Backend REST',
+    subtitle: 'Node.js + Express',
+    description:
+        'E o servico que recebe as chamadas dos apps, aplica regras de negocio, grava no banco e publica eventos quando algo importante acontece.',
+    points: [
+      'Exemplos: GET /api/saloes, POST /api/reservas e PUT /api/reservas/:id/status.',
+      'Mantem uma interface REST clara entre app e servidor.',
+      'Pode ser replicado atras de um balanceador para reduzir ponto de falha unico.',
+    ],
+  ),
+  ArchitectureNodeInfo(
+    id: 'rabbit',
+    title: 'RabbitMQ',
+    subtitle: 'Middleware assincrono',
+    description:
+        'E o broker de mensagens. Ele desacopla produtor e consumidor: o backend publica, o consumer processa depois, sem chamada direta entre eles.',
+    points: [
+      'Usa AMQP 0-9-1, filas duraveis e mensagens persistentes.',
+      'Fila do prestador recebe NOVA_RESERVA_CRIADA.',
+      'Fila do cliente recebe STATUS_RESERVA_ATUALIZADO.',
+    ],
+  ),
+  ArchitectureNodeInfo(
+    id: 'consumer',
+    title: 'Consumer',
+    subtitle: 'Processo Docker isolado',
+    description:
+        'E um processo separado do backend. Ele fica escutando as filas, confirma o processamento com ACK e grava evidencias no banco.',
+    points: [
+      'Demonstra assincronicidade real: nao ha import de codigo nem REST backend -> consumer.',
+      'Usa reconexao automatica para tolerar RabbitMQ ainda iniciando.',
+      'Pode escalar horizontalmente com mais consumers no padrao Work Queue.',
+    ],
+  ),
+  ArchitectureNodeInfo(
+    id: 'postgres',
+    title: 'PostgreSQL',
+    subtitle: 'Persistencia',
+    description:
+        'Guarda saloes, clientes, reservas e os eventos processados. E a fonte de verdade consultada pelos endpoints REST.',
+    points: [
+      'Persistencia relacional deixa o estado das reservas auditavel.',
+      'Na evolucao, pode usar replica de leitura, backup e banco gerenciado.',
+      'O app mostra o estado mais recente a partir do servidor.',
+    ],
+  ),
+  ArchitectureNodeInfo(
+    id: 'eventLog',
+    title: 'event_log',
+    subtitle: 'Evidencia auditavel',
+    description:
+        'Tabela que prova que a mensagem passou pelo RabbitMQ e foi processada pelo consumer separado.',
+    points: [
+      'Ajuda a demonstrar produtor, broker, consumidor e timestamp de processamento.',
+      'Serve como base para atualizacao automatica do app por consulta periodica.',
+      'Mostra que o fluxo nao depende de uma chamada REST direta ao consumer.',
+    ],
+  ),
+];
+
 class ArchitectureSignalDiagram extends StatefulWidget {
-  const ArchitectureSignalDiagram({super.key});
+  const ArchitectureSignalDiagram({required this.onNodeSelected, super.key});
+
+  final ValueChanged<ArchitectureNodeInfo> onNodeSelected;
 
   @override
   State<ArchitectureSignalDiagram> createState() =>
@@ -43,9 +136,40 @@ class _ArchitectureSignalDiagramState extends State<ArchitectureSignalDiagram>
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, _) {
-          return CustomPaint(
-            painter: _ArchitecturePainter(progress: _controller.value),
-            child: const SizedBox.expand(),
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final size = Size(constraints.maxWidth, constraints.maxHeight);
+              final layout = _ArchitectureLayout.fromSize(size);
+              return Stack(
+                children: [
+                  CustomPaint(
+                    painter: _ArchitecturePainter(
+                      progress: _controller.value,
+                      layout: layout,
+                    ),
+                    child: const SizedBox.expand(),
+                  ),
+                  for (final entry in layout.nodes.entries)
+                    Positioned(
+                      left: entry.value.left,
+                      top: entry.value.top,
+                      width: entry.value.width,
+                      height: entry.value.height,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => widget.onNodeSelected(
+                            architectureNodeInfos.firstWhere(
+                              (node) => node.id == entry.key,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
           );
         },
       ),
@@ -53,57 +177,93 @@ class _ArchitectureSignalDiagramState extends State<ArchitectureSignalDiagram>
   }
 }
 
-class _ArchitecturePainter extends CustomPainter {
-  const _ArchitecturePainter({required this.progress});
+class _ArchitectureLayout {
+  const _ArchitectureLayout({required this.nodes});
 
-  final double progress;
+  final Map<String, Rect> nodes;
 
-  @override
-  void paint(Canvas canvas, Size size) {
+  factory _ArchitectureLayout.fromSize(Size size) {
     final nodeWidth = math.min(114.0, size.width * 0.31);
     const nodeHeight = 46.0;
     const margin = 14.0;
 
-    final flutter = Rect.fromLTWH(margin, 22, nodeWidth, nodeHeight);
-    final api = Rect.fromLTWH(
-      (size.width - nodeWidth) / 2,
-      22,
-      nodeWidth,
-      nodeHeight,
+    return _ArchitectureLayout(
+      nodes: {
+        'flutter': Rect.fromLTWH(margin, 22, nodeWidth, nodeHeight),
+        'api': Rect.fromLTWH(
+          (size.width - nodeWidth) / 2,
+          22,
+          nodeWidth,
+          nodeHeight,
+        ),
+        'rabbit': Rect.fromLTWH(
+          size.width - nodeWidth - margin,
+          22,
+          nodeWidth,
+          nodeHeight,
+        ),
+        'postgres': Rect.fromLTWH(
+          (size.width - nodeWidth) / 2,
+          size.height - nodeHeight - 22,
+          nodeWidth,
+          nodeHeight,
+        ),
+        'eventLog': Rect.fromLTWH(
+          margin,
+          size.height - nodeHeight - 22,
+          nodeWidth,
+          nodeHeight,
+        ),
+        'consumer': Rect.fromLTWH(
+          size.width - nodeWidth - margin,
+          size.height - nodeHeight - 22,
+          nodeWidth,
+          nodeHeight,
+        ),
+      },
     );
-    final rabbit = Rect.fromLTWH(
-      size.width - nodeWidth - margin,
-      22,
-      nodeWidth,
-      nodeHeight,
-    );
-    final postgres = Rect.fromLTWH(
-      (size.width - nodeWidth) / 2,
-      size.height - nodeHeight - 22,
-      nodeWidth,
-      nodeHeight,
-    );
-    final eventLog = Rect.fromLTWH(
-      margin,
-      size.height - nodeHeight - 22,
-      nodeWidth,
-      nodeHeight,
-    );
-    final consumer = Rect.fromLTWH(
-      size.width - nodeWidth - margin,
-      size.height - nodeHeight - 22,
-      nodeWidth,
-      nodeHeight,
-    );
+  }
+}
+
+class _ArchitecturePainter extends CustomPainter {
+  const _ArchitecturePainter({required this.progress, required this.layout});
+
+  final double progress;
+  final _ArchitectureLayout layout;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final flutter = layout.nodes['flutter']!;
+    final api = layout.nodes['api']!;
+    final rabbit = layout.nodes['rabbit']!;
+    final postgres = layout.nodes['postgres']!;
+    final eventLog = layout.nodes['eventLog']!;
+    final consumer = layout.nodes['consumer']!;
 
     _drawLine(canvas, flutter.centerRight, api.centerLeft, AppTheme.teal);
     _drawLine(canvas, api.centerRight, rabbit.centerLeft, AppTheme.coral);
     _drawLine(canvas, rabbit.bottomCenter, consumer.topCenter, AppTheme.coral);
-    _drawLine(canvas, consumer.centerLeft, postgres.centerRight, AppTheme.amber);
+    _drawLine(
+      canvas,
+      consumer.centerLeft,
+      postgres.centerRight,
+      AppTheme.amber,
+    );
     _drawLine(canvas, api.bottomCenter, postgres.topCenter, AppTheme.teal);
-    _drawLine(canvas, postgres.centerLeft, eventLog.centerRight, Colors.blueGrey);
+    _drawLine(
+      canvas,
+      postgres.centerLeft,
+      eventLog.centerRight,
+      Colors.blueGrey,
+    );
 
-    _drawPulse(canvas, flutter.centerRight, api.centerLeft, progress, AppTheme.teal);
+    _drawPulse(
+      canvas,
+      flutter.centerRight,
+      api.centerLeft,
+      progress,
+      AppTheme.teal,
+    );
     _drawPulse(
       canvas,
       api.centerRight,
@@ -169,7 +329,13 @@ class _ArchitecturePainter extends CustomPainter {
     canvas.drawCircle(offset, 4.8, dot);
   }
 
-  void _drawNode(Canvas canvas, Rect rect, String title, String subtitle, Color color) {
+  void _drawNode(
+    Canvas canvas,
+    Rect rect,
+    String title,
+    String subtitle,
+    Color color,
+  ) {
     final background = Paint()
       ..color = color.withValues(alpha: 0.1)
       ..style = PaintingStyle.fill;
@@ -214,11 +380,7 @@ class _ArchitecturePainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: text,
-        style: TextStyle(
-          color: color,
-          fontSize: fontSize,
-          fontWeight: weight,
-        ),
+        style: TextStyle(color: color, fontSize: fontSize, fontWeight: weight),
       ),
       maxLines: 1,
       ellipsis: '.',

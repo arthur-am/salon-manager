@@ -29,9 +29,9 @@ class SaloesScreen extends ConsumerWidget {
               const SizedBox(height: 18),
               Text(
                 'Saloes disponiveis',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
               ),
               const SizedBox(height: 12),
               for (final salao in items)
@@ -47,7 +47,7 @@ class SaloesScreen extends ConsumerWidget {
                 const _EmptyList(
                   icon: Icons.store_mall_directory_outlined,
                   title: 'Nenhum salao cadastrado',
-                  subtitle: 'Suba o backend com os seeds do banco para listar opcoes.',
+                  subtitle: 'Ainda nao ha opcoes disponiveis para reserva.',
                 ),
             ],
           ),
@@ -80,7 +80,10 @@ class _HeroSummary extends StatelessWidget {
               color: AppTheme.amber.withValues(alpha: 0.24),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: const Icon(Icons.auto_awesome_rounded, color: AppTheme.coral),
+            child: const Icon(
+              Icons.auto_awesome_rounded,
+              color: AppTheme.coral,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -88,10 +91,10 @@ class _HeroSummary extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Reserva de saloes com sincronizacao distribuida',
+                  'Encontre o espaco certo para sua festa',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -104,8 +107,8 @@ class _HeroSummary extends StatelessWidget {
                       color: AppTheme.teal,
                     ),
                     const StatusPill(
-                      icon: Icons.sync_rounded,
-                      label: 'polling 6s',
+                      icon: Icons.calendar_month_rounded,
+                      label: 'reserva online',
                       color: AppTheme.coral,
                     ),
                   ],

@@ -8,5 +8,9 @@ abstract interface class ReservasRepository {
     required int salaoId,
     required DateTime dataReserva,
   });
+  Future<Reserva> updateStatus({
+    required int reservaId,
+    required String status,
+  });
   Future<List<EventLog>> listEventLog({int limit = 20});
 }

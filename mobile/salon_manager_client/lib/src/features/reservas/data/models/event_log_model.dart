@@ -24,7 +24,7 @@ class EventLogModel {
       payload: rawPayload is Map<String, dynamic> ? rawPayload : {},
       processadoEm:
           DateTime.tryParse((json['processado_em'] ?? '') as String) ??
-              DateTime.now(),
+          DateTime.now(),
     );
   }
 

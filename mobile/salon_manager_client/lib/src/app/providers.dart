@@ -6,6 +6,7 @@ import '../features/client/domain/repositories/clientes_repository.dart';
 import '../features/reservas/data/repositories/reservas_repository_impl.dart';
 import '../features/reservas/domain/repositories/reservas_repository.dart';
 import '../features/reservas/domain/usecases/create_reserva_flow.dart';
+import '../features/reservas/domain/usecases/update_reserva_status.dart';
 import '../features/reservas/domain/usecases/watch_reservas_snapshot.dart';
 import '../features/saloes/data/repositories/saloes_repository_impl.dart';
 import '../features/saloes/domain/entities/salao.dart';
@@ -51,6 +52,10 @@ final createReservaFlowProvider = Provider<CreateReservaFlow>(
 
 final watchReservasSnapshotProvider = Provider<WatchReservasSnapshot>(
   (ref) => WatchReservasSnapshot(ref.watch(reservasRepositoryProvider)),
+);
+
+final updateReservaStatusProvider = Provider<UpdateReservaStatus>(
+  (ref) => UpdateReservaStatus(ref.watch(reservasRepositoryProvider)),
 );
 
 final getSystemStatusProvider = Provider<GetSystemStatus>(

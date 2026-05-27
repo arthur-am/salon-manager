@@ -24,7 +24,8 @@ class SystemStatusModel {
 
     return SystemStatusModel(
       status: (json['status'] ?? 'degraded') as String,
-      timestamp: DateTime.tryParse((json['timestamp'] ?? '') as String) ??
+      timestamp:
+          DateTime.tryParse((json['timestamp'] ?? '') as String) ??
           DateTime.now(),
       uptimeSeconds: (json['uptimeSeconds'] ?? 0) as int,
       database: DatabaseStatus(
@@ -37,8 +38,9 @@ class SystemStatusModel {
         queues: (messaging['queues'] as List<dynamic>? ?? const [])
             .map((queue) => queue.toString())
             .toList(),
-        lastConnectedAt:
-            DateTime.tryParse((messaging['lastConnectedAt'] ?? '') as String),
+        lastConnectedAt: DateTime.tryParse(
+          (messaging['lastConnectedAt'] ?? '') as String,
+        ),
         lastError: messaging['lastError'] as String?,
         retryDelayMs: (messaging['retryDelayMs'] ?? 0) as int,
       ),

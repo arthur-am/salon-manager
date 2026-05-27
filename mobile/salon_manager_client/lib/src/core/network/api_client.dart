@@ -7,11 +7,9 @@ import '../config/api_config.dart';
 import 'api_exception.dart';
 
 class ApiClient {
-  ApiClient({
-    http.Client? httpClient,
-    String baseUrl = ApiConfig.baseUrl,
-  })  : _httpClient = httpClient ?? http.Client(),
-        _baseUri = Uri.parse(baseUrl.endsWith('/') ? baseUrl : '$baseUrl/');
+  ApiClient({http.Client? httpClient, String baseUrl = ApiConfig.baseUrl})
+    : _httpClient = httpClient ?? http.Client(),
+      _baseUri = Uri.parse(baseUrl.endsWith('/') ? baseUrl : '$baseUrl/');
 
   final http.Client _httpClient;
   final Uri _baseUri;
@@ -31,13 +29,18 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
   }) async {
-    final uri = _baseUri.resolve(path.startsWith('/') ? path.substring(1) : path);
+    final uri = _baseUri.resolve(
+      path.startsWith('/') ? path.substring(1) : path,
+    );
     Object? lastError;
 
     for (var attempt = 0; attempt <= ApiConfig.retryCount; attempt++) {
       try {
-        final response = await _request(method, uri, body: body)
-            .timeout(ApiConfig.requestTimeout);
+        final response = await _request(
+          method,
+          uri,
+          body: body,
+        ).timeout(ApiConfig.requestTimeout);
 
         if (response.statusCode >= 200 && response.statusCode < 300) {
           if (response.bodyBytes.isEmpty) return null;

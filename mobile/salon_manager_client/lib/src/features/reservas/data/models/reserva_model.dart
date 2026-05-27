@@ -28,7 +28,8 @@ class ReservaModel {
       salaoId: json['salao_id'] as int?,
       dataReserva: DateTime.parse(json['data_reserva'] as String),
       status: (json['status'] ?? 'PENDENTE') as String,
-      createdAt: DateTime.tryParse((json['created_at'] ?? '') as String) ??
+      createdAt:
+          DateTime.tryParse((json['created_at'] ?? '') as String) ??
           DateTime.now(),
       clienteNome: (json['cliente_nome'] ?? 'Cliente') as String,
       salaoNome: (json['salao_nome'] ?? 'Salao') as String,

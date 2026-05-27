@@ -5,7 +5,6 @@ class ApiException implements Exception {
   final int? statusCode;
 
   @override
-  String toString() => statusCode == null
-      ? message
-      : '$message (HTTP $statusCode)';
+  String toString() =>
+      statusCode == null ? message : '$message (HTTP $statusCode)';
 }

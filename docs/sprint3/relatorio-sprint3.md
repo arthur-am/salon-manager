@@ -8,11 +8,11 @@ A Sprint 3 entrega o app Flutter do cliente do SalonManager. O app permite lista
 
 | Criterio | Evidencia implementada |
 |---|---|
-| Funcionalidade do app | Fluxo executavel: listar saloes, abrir detalhes, criar cliente, criar reserva e acompanhar status. |
+| Funcionalidade do app | Fluxo executavel: listar saloes, abrir detalhes, criar cliente, criar reserva, aceitar/recusar/concluir como prestador e acompanhar status. |
 | Integracao REST | Consumo de `/api/saloes`, `/api/saloes/:id`, `/api/clientes`, `/api/reservas`, `/api/event-log` e `/api/system/status`. |
-| Atualizacao assincrona | Polling automatico a cada 6 segundos em reservas e event log. |
+| Atualizacao assincrona | Atualizacao automatica em reservas e event log, com mudanca de status refletida sem acao manual do usuario. |
 | Clean Architecture | Separacao em `core`, `data`, `domain` e `presentation`, com contratos de repositorio e casos de uso. |
-| Interface | Material 3, navegacao por abas, formularios validados, cards de status e tela visual de arquitetura distribuida. |
+| Interface | Material 3, navegacao por abas, formularios validados, cards de status, modo prestador e tela visual de arquitetura distribuida com explicacoes clicaveis. |
 
 ## Como demonstrar
 
@@ -49,6 +49,8 @@ flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:3000
 - `ApiClient` centraliza REST, timeout, retry e serializacao JSON.
 - O fluxo de criacao de reserva cria o cliente antes da reserva para evitar depender do seed do banco.
 - A tela Sistema consome health detalhado do backend e mostra arquitetura distribuida animada.
+- A tela Reservas inclui um modo Prestador para demonstrar aceite, recusa e conclusao de reservas dentro do proprio app.
+- Termos tecnicos foram concentrados na tela Sistema para preservar clareza nas telas de uso.
 - O app mantem o backend Express, PostgreSQL e RabbitMQ ja entregues na Sprint 2.
 
 ## Preparacao para Sprint 4

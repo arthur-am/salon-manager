@@ -5,11 +5,7 @@ import '../../../../core/presentation/widgets/status_pill.dart';
 import '../../domain/entities/salao.dart';
 
 class SalaoCard extends StatelessWidget {
-  const SalaoCard({
-    required this.salao,
-    required this.onTap,
-    super.key,
-  });
+  const SalaoCard({required this.salao, required this.onTap, super.key});
 
   final Salao salao;
   final VoidCallback onTap;
@@ -33,7 +29,10 @@ class SalaoCard extends StatelessWidget {
                   color: AppTheme.mint.withValues(alpha: 0.22),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.celebration_rounded, color: AppTheme.teal),
+                child: const Icon(
+                  Icons.celebration_rounded,
+                  color: AppTheme.teal,
+                ),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -45,8 +44,8 @@ class SalaoCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                     const SizedBox(height: 6),
                     Text(
@@ -66,8 +65,8 @@ class SalaoCard extends StatelessWidget {
                           color: AppTheme.teal,
                         ),
                         const StatusPill(
-                          icon: Icons.bolt_rounded,
-                          label: 'REST online',
+                          icon: Icons.calendar_month_rounded,
+                          label: 'reserva rapida',
                           color: AppTheme.coral,
                         ),
                       ],

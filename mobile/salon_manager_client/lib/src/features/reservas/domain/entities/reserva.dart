@@ -22,6 +22,16 @@ class Reserva {
   bool get isPending => status == 'PENDENTE';
   bool get isConfirmed => status == 'CONFIRMADA';
   bool get isRejected => status == 'RECUSADA';
+  bool get isDone => status == 'CONCLUIDA';
+
+  String get statusLabel {
+    return switch (status) {
+      'CONFIRMADA' => 'Confirmada',
+      'RECUSADA' => 'Recusada',
+      'CONCLUIDA' => 'Concluida',
+      _ => 'Aguardando',
+    };
+  }
 }
 
 class ReservaDraft {

@@ -9,17 +9,18 @@ class AppTheme {
   static const surface = Color(0xFFF6F7F9);
 
   static ThemeData light() {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: teal,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: teal,
-      secondary: coral,
-      tertiary: amber,
-      surface: Colors.white,
-      surfaceContainerHighest: surface,
-      onSurface: ink,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: teal,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: teal,
+          secondary: coral,
+          tertiary: amber,
+          surface: Colors.white,
+          surfaceContainerHighest: surface,
+          onSurface: ink,
+        );
 
     return ThemeData(
       useMaterial3: true,

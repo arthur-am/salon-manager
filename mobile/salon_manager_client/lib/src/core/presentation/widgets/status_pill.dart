@@ -14,7 +14,10 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = Color.alphaBlend(color.withValues(alpha: 0.82), Colors.black);
+    final foreground = Color.alphaBlend(
+      color.withValues(alpha: 0.82),
+      Colors.black,
+    );
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(

@@ -16,11 +16,11 @@
 Entrega adicionada nesta versao:
 
 - app Flutter em `mobile/salon_manager_client`;
-- telas de saloes, detalhes, criacao de reserva, minhas reservas e sistema;
+- telas de saloes, detalhes, criacao de reserva, minhas reservas, modo prestador e sistema;
 - integracao REST com `/api/saloes`, `/api/clientes`, `/api/reservas`, `/api/event-log` e `/api/system/status`;
 - atualizacao assincrona por polling a cada 6 segundos;
 - organizacao em Clean Architecture (`core`, `data`, `domain`, `presentation`);
-- tela visual com diagrama animado REST + RabbitMQ + consumer + PostgreSQL.
+- tela visual com diagrama animado clicavel REST + RabbitMQ + consumer + PostgreSQL.
 
 Execucao:
 

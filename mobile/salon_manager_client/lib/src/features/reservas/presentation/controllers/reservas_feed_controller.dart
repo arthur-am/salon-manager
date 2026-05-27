@@ -9,14 +9,15 @@ import '../../domain/entities/reserva.dart';
 
 final reservasFeedControllerProvider =
     NotifierProvider<ReservasFeedController, ReservasFeedState>(
-  ReservasFeedController.new,
-);
+      ReservasFeedController.new,
+    );
 
 class ReservasFeedState {
   const ReservasFeedState({
     required this.reservas,
     required this.events,
     required this.isCreating,
+    required this.updatingReservaId,
     required this.lastSync,
   });
 
@@ -25,6 +26,7 @@ class ReservasFeedState {
       reservas: AsyncLoading<List<Reserva>>(),
       events: AsyncLoading<List<EventLog>>(),
       isCreating: false,
+      updatingReservaId: null,
       lastSync: null,
     );
   }
@@ -32,18 +34,24 @@ class ReservasFeedState {
   final AsyncValue<List<Reserva>> reservas;
   final AsyncValue<List<EventLog>> events;
   final bool isCreating;
+  final int? updatingReservaId;
   final DateTime? lastSync;
 
   ReservasFeedState copyWith({
     AsyncValue<List<Reserva>>? reservas,
     AsyncValue<List<EventLog>>? events,
     bool? isCreating,
+    int? updatingReservaId,
+    bool clearUpdatingReservaId = false,
     DateTime? lastSync,
   }) {
     return ReservasFeedState(
       reservas: reservas ?? this.reservas,
       events: events ?? this.events,
       isCreating: isCreating ?? this.isCreating,
+      updatingReservaId: clearUpdatingReservaId
+          ? null
+          : updatingReservaId ?? this.updatingReservaId,
       lastSync: lastSync ?? this.lastSync,
     );
   }
@@ -95,6 +103,19 @@ class ReservasFeedController extends Notifier<ReservasFeedState> {
       return reserva;
     } finally {
       state = state.copyWith(isCreating: false);
+    }
+  }
+
+  Future<void> updateStatus(int reservaId, String status) async {
+    state = state.copyWith(updatingReservaId: reservaId);
+    try {
+      await ref.read(updateReservaStatusProvider)(
+        reservaId: reservaId,
+        status: status,
+      );
+      await refresh(silent: true);
+    } finally {
+      state = state.copyWith(clearUpdatingReservaId: true);
     }
   }
 }

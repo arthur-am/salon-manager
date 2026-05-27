@@ -32,11 +32,7 @@ class _ClientShellState extends State<ClientShell> {
     ),
   ];
 
-  final _screens = const [
-    SaloesScreen(),
-    ReservasScreen(),
-    SystemScreen(),
-  ];
+  final _screens = const [SaloesScreen(), ReservasScreen(), SystemScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -48,16 +44,16 @@ class _ClientShellState extends State<ClientShell> {
           children: [
             Text(
               'SALON.OS',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
             Text(
               'Cliente distribuido',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.secondary,
-                    fontWeight: FontWeight.w700,
-                  ),
+                color: Theme.of(context).colorScheme.secondary,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),

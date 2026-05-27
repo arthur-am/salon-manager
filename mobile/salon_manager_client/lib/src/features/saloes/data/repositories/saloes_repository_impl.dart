@@ -19,7 +19,8 @@ class SaloesRepositoryImpl implements SaloesRepository {
 
   @override
   Future<Salao> getSalao(int id) async {
-    final json = await _apiClient.get('/api/saloes/$id') as Map<String, dynamic>;
+    final json =
+        await _apiClient.get('/api/saloes/$id') as Map<String, dynamic>;
     return SalaoModel.fromJson(json).toEntity();
   }
 }

@@ -10,11 +10,13 @@ class ClientesRepositoryImpl implements ClientesRepository {
 
   @override
   Future<Cliente> createCliente(ClienteDraft draft) async {
-    final json = await _apiClient.post('/api/clientes', {
-      'nome': draft.nome,
-      'email': draft.email,
-      'telefone': draft.telefone,
-    }) as Map<String, dynamic>;
+    final json =
+        await _apiClient.post('/api/clientes', {
+              'nome': draft.nome,
+              'email': draft.email,
+              'telefone': draft.telefone,
+            })
+            as Map<String, dynamic>;
 
     return ClienteModel.fromJson(json).toEntity();
   }
