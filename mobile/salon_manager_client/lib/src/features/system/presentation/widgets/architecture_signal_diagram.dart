@@ -38,11 +38,12 @@ const architectureNodeInfos = <ArchitectureNodeInfo>[
     title: 'Backend REST',
     subtitle: 'Node.js + Express',
     description:
-        'E o servico que recebe as chamadas dos apps, aplica regras de negocio, grava no banco e publica eventos quando algo importante acontece.',
+        'E o servico que recebe as chamadas dos apps, aplica regras de negocio, grava no banco e publica eventos quando algo importante acontece. Na arquitetura atual ele ainda faz a gravacao e a publicacao.',
     points: [
       'Exemplos: GET /api/saloes, POST /api/reservas e PUT /api/reservas/:id/status.',
       'Mantem uma interface REST clara entre app e servidor.',
-      'Pode ser replicado atras de um balanceador para reduzir ponto de falha unico.',
+      'Para robustez maxima, a evolucao recomendada e usar Transactional Outbox Pattern.',
+      'Pode ser replicado atras de um load balancer para reduzir ponto de falha unico.',
     ],
   ),
   ArchitectureNodeInfo(
@@ -74,10 +75,11 @@ const architectureNodeInfos = <ArchitectureNodeInfo>[
     title: 'PostgreSQL',
     subtitle: 'Persistencia',
     description:
-        'Guarda saloes, clientes, reservas e os eventos processados. E a fonte de verdade consultada pelos endpoints REST.',
+        'Guarda saloes, clientes, reservas e os eventos processados. Na evolucao com Transactional Outbox, tambem guardaria uma tabela outbox_events com eventos pendentes.',
     points: [
       'Persistencia relacional deixa o estado das reservas auditavel.',
-      'Na evolucao, pode usar replica de leitura, backup e banco gerenciado.',
+      'No Outbox Pattern, reserva e evento pendente entram na mesma transacao.',
+      'Pode usar backup, replica de leitura ou banco gerenciado para reduzir risco.',
       'O app mostra o estado mais recente a partir do servidor.',
     ],
   ),
@@ -91,6 +93,7 @@ const architectureNodeInfos = <ArchitectureNodeInfo>[
       'Ajuda a demonstrar produtor, broker, consumidor e timestamp de processamento.',
       'Serve como base para atualizacao automatica do app por consulta periodica.',
       'Mostra que o fluxo nao depende de uma chamada REST direta ao consumer.',
+      'Com event_id unico, tambem ajuda a demonstrar idempotencia.',
     ],
   ),
 ];

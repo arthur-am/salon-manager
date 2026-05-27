@@ -29,6 +29,7 @@ flowchart TB
   Backend["Backend REST Express"]
   MOM["RabbitMQ + consumer"]
   DB["PostgreSQL"]
+  Outbox["Evolucao proposta: outbox_events + publisher-service"]
 
   Screens --> Controllers
   Controllers --> UseCases
@@ -40,6 +41,8 @@ flowchart TB
   Backend --> DB
   Backend -->|"publish"| MOM
   MOM -->|"consume/ack"| DB
+  DB -.-> Outbox
+  Outbox -.-> MOM
 ```
 
 ## Fluxo funcional da Sprint 3
@@ -74,6 +77,30 @@ Foi adicionado o endpoint `GET /api/system/status`, consumido pela tela Sistema:
 
 Essa tela tambem inclui um diagrama animado mostrando o caminho Flutter -> REST -> RabbitMQ -> Consumer -> PostgreSQL/event_log. A ideia e tornar visivel o comportamento distribuido, nao apenas o CRUD.
 
+## Evolucao robusta: Transactional Outbox Pattern
+
+A arquitetura executavel da Sprint 3 segue o fluxo ja entregue na Sprint 2: o backend grava a reserva e publica o evento no RabbitMQ. Para uma evolucao de robustez maxima, a proposta documentada e exibida na aba Sistema e aplicar o **Transactional Outbox Pattern**.
+
+Nesse padrao, o backend nao publica diretamente no broker durante a requisicao. Ele grava a alteracao de negocio e um evento pendente na tabela `outbox_events` dentro da mesma transacao do PostgreSQL. Um `publisher-service` desacoplado le eventos pendentes, publica no RabbitMQ e marca cada evento como publicado.
+
+Fluxo proposto:
+
+```text
+Backend REST
+  -> PostgreSQL: reservas
+  -> PostgreSQL: outbox_events (mesma transacao)
+Publisher Service
+  -> le outbox_events pendentes
+  -> publica no RabbitMQ
+  -> marca como publicado
+RabbitMQ
+  -> entrega para consumers
+Consumer Service
+  -> processa e grava event_log
+```
+
+Esse desenho reduz o problema classico de sistemas distribuidos conhecido como dual-write problem: gravar no banco e publicar no broker como duas operacoes separadas. Se o RabbitMQ estiver indisponivel, a reserva continua salva e o evento fica pendente para publicacao posterior.
+
 ## Mitigacao de falha unica
 
 Na Sprint 3, a mitigacao ja aparece em tres pontos:
@@ -82,4 +109,22 @@ Na Sprint 3, a mitigacao ja aparece em tres pontos:
 - backend com health detalhado de banco e mensageria;
 - RabbitMQ com filas duraveis e consumer separado.
 
-Para a Sprint 4, a extensao natural e replicar backend e consumer atras de um balanceador, manter o RabbitMQ gerenciado/clusterizado e adicionar o app do prestador consumindo o fluxo completo de aceite/recusa.
+Mesmo com Outbox, ainda existem pontos centrais que precisam ser tratados em uma versao de producao:
+
+- PostgreSQL pode virar gargalo ou ponto unico de falha;
+- RabbitMQ pode virar ponto unico de falha;
+- backend unico pode cair;
+- publisher unico pode atrasar eventos;
+- consumer unico pode atrasar processamento.
+
+Mitigacoes propostas:
+
+- backend com multiplas replicas atras de load balancer;
+- publisher com multiplas replicas usando `SELECT ... FOR UPDATE SKIP LOCKED` para claim seguro;
+- consumer com multiplas replicas consumindo Work Queue;
+- RabbitMQ com cluster ou quorum queues;
+- PostgreSQL com backup, replica de leitura ou servico gerenciado;
+- eventos com `event_id` unico para idempotencia;
+- Dead Letter Queue para mensagens que falham repetidamente.
+
+Para a Sprint 4, a extensao natural e adicionar o app do prestador definitivo e evoluir a infraestrutura para Outbox + publisher-service, mantendo o fluxo completo cliente -> backend -> outbox -> RabbitMQ -> consumer -> prestador/cliente.

@@ -89,6 +89,7 @@ class SystemScreen extends ConsumerWidget {
                         'GET /api/saloes lista os servicos disponiveis.',
                         'POST /api/reservas cria a solicitacao do cliente.',
                         'PUT /api/reservas/:id/status permite aceitar, recusar ou concluir.',
+                        'Hoje ele grava e publica; a evolucao robusta e delegar a publicacao para um publisher-service via outbox.',
                       ],
                     ),
                   ),
@@ -109,7 +110,8 @@ class SystemScreen extends ConsumerWidget {
                       points: const [
                         'As reservas mudam de PENDENTE para CONFIRMADA, RECUSADA ou CONCLUIDA.',
                         'O event_log registra evidencias dos eventos processados.',
-                        'Em producao, pode receber backup e replicas para reduzir risco.',
+                        'No Transactional Outbox Pattern, uma tabela outbox_events guardaria eventos pendentes na mesma transacao da reserva.',
+                        'Em producao, pode receber backup, replica de leitura ou banco gerenciado para reduzir risco.',
                       ],
                     ),
                   ),
@@ -131,6 +133,24 @@ class SystemScreen extends ConsumerWidget {
                         'fila_notificacoes_prestador recebe novas reservas.',
                         'fila_notificacoes_cliente recebe mudancas de status.',
                         'Filas duraveis e mensagens persistentes reduzem perda em falhas.',
+                        'Em robustez maxima, RabbitMQ pode usar cluster ou quorum queues.',
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _OutboxPanel(
+                    onTap: () => _showInfoSheet(
+                      context,
+                      title: 'Transactional Outbox Pattern',
+                      subtitle: 'Evolucao robusta proposta',
+                      description:
+                          'O padrão Transactional Outbox resolve o problema de gravar no banco e publicar no broker como duas operacoes separadas. Em vez de publicar direto no RabbitMQ dentro da requisicao, o backend grava a reserva e um evento pendente em outbox_events na mesma transacao. Um publisher-service desacoplado le essa tabela e publica no RabbitMQ depois.',
+                      points: const [
+                        'Fluxo proposto: Backend REST -> PostgreSQL reservas + outbox_events -> Publisher Service -> RabbitMQ -> Consumer -> event_log.',
+                        'Se o RabbitMQ cair, a reserva continua salva e o evento fica pendente para publicacao posterior.',
+                        'O publisher pode usar SELECT ... FOR UPDATE SKIP LOCKED para varios workers pegarem eventos sem duplicar trabalho.',
+                        'Eventos precisam de event_id unico para idempotencia caso uma mensagem seja reenviada.',
+                        'Mensagens que falham repetidamente podem ir para Dead Letter Queue.',
                       ],
                     ),
                   ),
@@ -355,6 +375,67 @@ class _ServiceTile extends StatelessWidget {
   }
 }
 
+class _OutboxPanel extends StatelessWidget {
+  const _OutboxPanel({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.teal.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppTheme.teal.withValues(alpha: 0.22)),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.move_to_inbox_rounded,
+                  color: AppTheme.teal,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Evolucao robusta: Transactional Outbox',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Reserva e evento pendente na mesma transacao; publisher desacoplado publica depois.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _Concept {
   const _Concept({
     required this.icon,
@@ -373,15 +454,29 @@ class _Concept {
 
 const _concepts = [
   _Concept(
+    icon: Icons.move_to_inbox_rounded,
+    title: 'Outbox Pattern',
+    subtitle: 'Consistencia entre banco e mensagens',
+    description:
+        'Transactional Outbox Pattern evita o dual-write problem: a reserva e o evento pendente sao gravados juntos no PostgreSQL. Um publisher-service separado publica os eventos pendentes no RabbitMQ.',
+    points: [
+      'O backend nao precisa depender do RabbitMQ estar online no instante da requisicao.',
+      'A tabela outbox_events permite retry, auditoria e publicacao posterior.',
+      'Um publisher com multiplas replicas pode usar SELECT ... FOR UPDATE SKIP LOCKED para dividir trabalho.',
+    ],
+  ),
+  _Concept(
     icon: Icons.warning_amber_rounded,
     title: 'Ponto de falha unica',
     subtitle: 'Onde o sistema ainda pode parar',
     description:
         'Um ponto de falha unica e qualquer componente que, se cair sozinho, derruba uma parte importante do sistema.',
     points: [
-      'Hoje o banco e o broker sao pontos centrais.',
-      'O app mostra essa consciencia na tela Sistema.',
-      'A mitigacao vem com replicas, backups, broker gerenciado e balanceamento.',
+      'PostgreSQL pode virar gargalo ou ponto unico de falha.',
+      'RabbitMQ pode virar ponto unico de falha se rodar isolado.',
+      'Backend unico pode cair e impedir novas requisicoes.',
+      'Publisher unico pode atrasar eventos pendentes.',
+      'Consumer unico pode atrasar o processamento das mensagens.',
     ],
   ),
   _Concept(
@@ -391,9 +486,11 @@ const _concepts = [
     description:
         'Redundancia significa ter mais de uma instancia ou copia de um componente critico para o sistema continuar operando se algo falhar.',
     points: [
-      'Mais de um backend atras de um load balancer.',
-      'Mais de um consumer processando a mesma fila.',
-      'Banco com backup e replica de leitura.',
+      'Backend com multiplas replicas atras de load balancer.',
+      'Publisher com multiplas replicas e claim seguro no banco.',
+      'Consumer com multiplas replicas consumindo Work Queue.',
+      'RabbitMQ com cluster ou quorum queues.',
+      'PostgreSQL com backup, replica de leitura ou servico gerenciado.',
     ],
   ),
   _Concept(
@@ -405,6 +502,7 @@ const _concepts = [
     points: [
       'Work Queue permite adicionar consumers.',
       'Backend pode ser replicado horizontalmente.',
+      'Publisher-service pode escalar separado do backend.',
       'App continua chamando a mesma API.',
     ],
   ),
@@ -418,6 +516,7 @@ const _concepts = [
       'Backend e consumer sao containers diferentes.',
       'A unica ponte entre eles e o RabbitMQ.',
       'O event_log prova o processamento posterior.',
+      'Com outbox, a publicacao tambem sai do backend e vai para um servico desacoplado.',
     ],
   ),
   _Concept(
@@ -430,6 +529,31 @@ const _concepts = [
       'NOVA_RESERVA_CRIADA vai para o prestador.',
       'STATUS_RESERVA_ATUALIZADO vai para o cliente.',
       'ACK manual evita remover mensagem antes do processamento.',
+      'No Outbox Pattern, o publisher-service vira o produtor tecnico do RabbitMQ.',
+    ],
+  ),
+  _Concept(
+    icon: Icons.fingerprint_rounded,
+    title: 'Idempotencia',
+    subtitle: 'Repetir sem duplicar efeito',
+    description:
+        'Em sistemas distribuidos, uma mensagem pode ser reenviada. Idempotencia significa processar o mesmo event_id mais de uma vez sem duplicar a reserva, a notificacao ou o log de negocio.',
+    points: [
+      'Cada evento deve ter event_id unico.',
+      'Consumer pode registrar IDs processados para ignorar duplicatas.',
+      'Isso combina com retries e melhora confiabilidade.',
+    ],
+  ),
+  _Concept(
+    icon: Icons.report_rounded,
+    title: 'Dead Letter Queue',
+    subtitle: 'Falhas repetidas sem travar a fila',
+    description:
+        'Dead Letter Queue e uma fila para mensagens que falharam varias vezes. Em vez de travar o fluxo principal, elas sao separadas para analise e reprocessamento.',
+    points: [
+      'Evita que uma mensagem ruim bloqueie as demais.',
+      'Ajuda a auditar erros de payload ou falha externa.',
+      'E uma evolucao natural junto com retry e backoff.',
     ],
   ),
   _Concept(

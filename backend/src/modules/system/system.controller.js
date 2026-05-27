@@ -33,7 +33,7 @@ async function status(req, res) {
       rest: 'timeout + retry no app cliente',
       stateSync: 'polling assincrono das reservas e do event_log',
       mom: 'RabbitMQ durable queues + consumer separado',
-      nextSprint: 'replicar backend/consumer atras de load balancer e adicionar app prestador',
+      nextSprint: 'Transactional Outbox Pattern + publisher-service + replicas',
     },
   });
 }

@@ -51,7 +51,32 @@ flutter build apk --debug --dart-define=API_BASE_URL=http://10.0.2.2:3000
 - A tela Sistema consome health detalhado do backend e mostra arquitetura distribuida animada.
 - A tela Reservas inclui um modo Prestador para demonstrar aceite, recusa e conclusao de reservas dentro do proprio app.
 - Termos tecnicos foram concentrados na tela Sistema para preservar clareza nas telas de uso.
+- A tela Sistema documenta a evolucao proposta com Transactional Outbox Pattern, publisher-service desacoplado, idempotencia e Dead Letter Queue.
 - O app mantem o backend Express, PostgreSQL e RabbitMQ ja entregues na Sprint 2.
+
+## Resiliencia e escalabilidade
+
+A arquitetura executavel desta sprint usa backend REST publicando eventos no RabbitMQ e consumer separado registrando `event_log`. Para mostrar maturidade em sistemas distribuidos, a entrega tambem documenta a evolucao recomendada com **Transactional Outbox Pattern**.
+
+Com Outbox, o backend gravaria a reserva e o evento pendente em `outbox_events` na mesma transacao do PostgreSQL. Um `publisher-service` separado publicaria esses eventos no RabbitMQ. Isso reduz o risco de a reserva ser salva e o evento se perder caso o broker esteja indisponivel no momento da requisicao.
+
+Pontos de falha unica reconhecidos:
+
+- PostgreSQL pode virar gargalo ou ponto unico de falha;
+- RabbitMQ pode virar ponto unico de falha;
+- backend unico pode cair;
+- publisher unico pode atrasar eventos;
+- consumer unico pode atrasar processamento.
+
+Mitigacoes propostas:
+
+- backend com multiplas replicas atras de load balancer;
+- publisher com multiplas replicas usando `SELECT ... FOR UPDATE SKIP LOCKED`;
+- consumer com multiplas replicas consumindo Work Queue;
+- RabbitMQ com cluster ou quorum queues;
+- PostgreSQL com backup, replica de leitura ou servico gerenciado;
+- eventos com `event_id` unico para idempotencia;
+- Dead Letter Queue para mensagens que falham repetidamente.
 
 ## Preparacao para Sprint 4
 

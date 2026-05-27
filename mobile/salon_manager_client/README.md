@@ -10,6 +10,7 @@ App Flutter do cliente para a Sprint 3 do SalonManager.
 - Permite aceitar, recusar e concluir reservas no modo Prestador.
 - Atualiza reservas e event log automaticamente por polling.
 - Mostra painel de sistema com API, PostgreSQL, RabbitMQ, event log e diagrama animado clicavel.
+- Explica Transactional Outbox Pattern, publisher-service, idempotencia, Dead Letter Queue, redundancia e pontos unicos de falha.
 
 ## Executar
 

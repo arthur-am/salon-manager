@@ -21,6 +21,7 @@ Entrega adicionada nesta versao:
 - atualizacao assincrona por polling a cada 6 segundos;
 - organizacao em Clean Architecture (`core`, `data`, `domain`, `presentation`);
 - tela visual com diagrama animado clicavel REST + RabbitMQ + consumer + PostgreSQL.
+- explicacoes de resiliencia com Transactional Outbox Pattern, publisher-service, idempotencia, Dead Letter Queue, redundancia e mitigacao de ponto de falha unico.
 
 Execucao:
 
