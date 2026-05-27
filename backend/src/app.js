@@ -5,6 +5,7 @@ const saloesRoutes    = require('./modules/saloes/saloes.routes');
 const clientesRoutes  = require('./modules/clientes/clientes.routes');
 const reservasRoutes  = require('./modules/reservas/reservas.routes');
 const eventLogRoutes  = require('./modules/event-log/event-log.routes');
+const systemRoutes    = require('./modules/system/system.routes');
 
 const app = express();
 app.use(cors());
@@ -24,5 +25,6 @@ app.use('/api/reservas', reservasRoutes);
 // GET /api/event-log?fila=fila_notificacoes_prestador
 // GET /api/event-log?limit=20
 app.use('/api/event-log', eventLogRoutes);
+app.use('/api/system', systemRoutes);
 
 module.exports = app;

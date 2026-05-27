@@ -5,9 +5,43 @@
 > Projeto Integrador · **Lab. de Desenvolvimento de Aplicações Móveis e Distribuídas (LDAMD)**
 > Engenharia de Software — **PUC Minas** · 5º Período · Noite · 1º Semestre 2026
 
-![Status](https://img.shields.io/badge/status-Sprint_2-blue?style=for-the-badge)
-![Sprint](https://img.shields.io/badge/sprint_atual-Integra%C3%A7%C3%A3o_MOM-success?style=for-the-badge)
+![Status](https://img.shields.io/badge/status-Sprint_3-blue?style=for-the-badge)
+![Sprint](https://img.shields.io/badge/sprint_atual-App_Flutter_Cliente-success?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-Academic-lightgrey?style=for-the-badge)
+
+---
+
+## Sprint 3 - App Flutter Cliente
+
+Entrega adicionada nesta versao:
+
+- app Flutter em `mobile/salon_manager_client`;
+- telas de saloes, detalhes, criacao de reserva, minhas reservas e sistema;
+- integracao REST com `/api/saloes`, `/api/clientes`, `/api/reservas`, `/api/event-log` e `/api/system/status`;
+- atualizacao assincrona por polling a cada 6 segundos;
+- organizacao em Clean Architecture (`core`, `data`, `domain`, `presentation`);
+- tela visual com diagrama animado REST + RabbitMQ + consumer + PostgreSQL.
+
+Execucao:
+
+```bash
+docker compose up --build
+
+cd mobile/salon_manager_client
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:3000
+```
+
+Android emulator:
+
+```bash
+cd mobile/salon_manager_client
+flutter run -d emulator --dart-define=API_BASE_URL=http://10.0.2.2:3000
+```
+
+Documentacao da entrega:
+
+- [Arquitetura do app cliente](docs/sprint3/arquitetura-app-cliente.md)
+- [Relatorio da Sprint 3](docs/sprint3/relatorio-sprint3.md)
 
 ---
 
@@ -23,8 +57,8 @@ A arquitetura é construída sobre quatro pilares:
 | Componente | Tecnologia | Sprint |
 |---|---|---|
 | Backend REST | Node.js + Express | Sprint 1 ✅ |
-| MOM (mensageria) | RabbitMQ + Consumer Service | Sprint 2 ✅ ← *atual* |
-| App móvel do cliente | Flutter | Sprint 3 |
+| MOM (mensageria) | RabbitMQ + Consumer Service | Sprint 2 ✅ |
+| App móvel do cliente | Flutter | Sprint 3 ✅ ← *atual* |
 | App móvel do prestador | Flutter | Sprint 4 |
 
 ---
@@ -306,7 +340,7 @@ curl http://localhost:3000/api/event-log
 |---|---|---|---|
 | **Sprint 1** | Arquitetura + Backend REST | 11/05/2026 | 🟢 concluída (17/20) |
 | **Sprint 2** | Integração MOM (RabbitMQ) | 25/05/2026 | 🟢 concluída |
-| **Sprint 3** | App Flutter — Cliente | 15/06/2026 | ⚪ pendente |
+| **Sprint 3** | App Flutter — Cliente | 15/06/2026 | 🟢 concluída |
 | **Sprint 4** | App Flutter — Prestador + Entrega Final | 03/07/2026 | ⚪ pendente |
 
 ---
